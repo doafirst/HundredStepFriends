@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.widget.ImageView;
 
 import com.facebook.AccessToken;
+import com.facebook.AccessTokenTracker;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
@@ -44,10 +45,10 @@ public class MainActivity extends AppCompatActivity {
         facebookButton1 = (LoginButton) findViewById(R.id.login_button);
         ig = findViewById(R.id.imageView);
         callbackManager = CallbackManager.Factory.create();
-        facebookButton1.setPermissions(Arrays.asList("public_profile, user_link"));
+        facebookButton1.setPermissions(Arrays.asList("public_profile, user_link, user_photos"));
 
-        String pic1 = "https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=6644254275590067&height=50&width=50&ext=1679790809&hash=AeQp4eozZZHvkqABt7g";//jsonObject.getClass("picture");
-        Picasso.get().load(pic1).into(ig);
+        //String pic1 = "https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=6644254275590067&height=50&width=50&ext=1679790809&hash=AeQp4eozZZHvkqABt7g";//jsonObject.getClass("picture");
+        //Picasso.get().load(pic1).into(ig);
         Log.d(TAG,"APP Start");
 
         facebookButton1.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
@@ -83,9 +84,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG,jsonObject.toString());
                 try {
                     String id = jsonObject.getString("id");
-                    //String pic = "https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=6644254275590067&height=50&width=50&ext=1679790809&hash=AeQp4eozZZHvkqABt7g";//jsonObject.getClass("picture");
+                    String pic = jsonObject.getJSONObject("picture").getJSONObject("data").getString("url");
+                    String link = jsonObject.getString("link");
+                    Log.d(TAG,pic);
                     //Picasso.get().load("https://graph.facebook.com/100000166802056/picture?type=large").into(ig);
-                    //Picasso.get().load(pic).into(ig);
+                    Picasso.get().load(pic).into(ig);
                 }catch (JSONException e){
 
                 }
@@ -93,8 +96,23 @@ public class MainActivity extends AppCompatActivity {
 
         });
         Bundle bundle = new Bundle();
-        bundle.putString("fields","name, id, first_name, last_name, link");
+        bundle.putString("fields","name, id, first_name, last_name, picture, link");
         graph.setParameters(bundle);
         graph.executeAsync();
+    }
+
+    AccessTokenTracker accessTokenTracker = new AccessTokenTracker() {
+        @Override
+        protected void onCurrentAccessTokenChanged(@Nullable AccessToken accessToken, @Nullable AccessToken accessToken1) {
+            if(accessToken1 == null){
+                LoginManager.getInstance().logOut();
+                ig.setImageResource(0);
+            }
+        }
+    };
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        accessTokenTracker.stopTracking();
     }
 }
